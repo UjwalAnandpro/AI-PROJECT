@@ -1,0 +1,22 @@
+name: Daily Commit
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+jobs:
+  auto-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Update file
+        run: |
+          echo "$(date)" >> update.txt
+      - name: Commit
+        run: |
+          git config user.name "YOUR_GITHUB_USERNAME"
+          git config user.email "YOUR_GITHUB_EMAIL"
+          git add .
+          git commit -m "Daily update"
+          git push
