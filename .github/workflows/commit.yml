@@ -12,24 +12,24 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Random commits (20 to 500) with random delays
+      - name: Random commits (20–120) with fast random delays
         run: |
           git config user.name "ujwal6-eng"
           git config user.email "anandujwal6@gmail.com"
 
-          # Commit count random: 20-500
-          max_commits=$(( ( RANDOM % 481 ) + 20 ))
-          echo "Aaj ke commits: $max_commits"
+          # SAFE random commit range (20 to 120)
+          max_commits=$(( ( RANDOM % 101 ) + 20 ))
+          echo "Today's commits: $max_commits"
 
           for ((i=1; i<=max_commits; i++)); do
-            # Random delay 1s to 180s (3 mins)
-            delay=$(( ( RANDOM % 180 ) + 1 ))
+            # Fast random delay: 1–30 seconds
+            delay=$(( ( RANDOM % 30 ) + 1 ))
 
             echo "$(date) - commit $i (delay ${delay}s)" >> update.txt
             git add update.txt
             git commit -m "Auto commit $i"
 
-            echo "Sleeping ${delay} seconds..."
+            echo "Waiting ${delay}s..."
             sleep $delay
           done
 
