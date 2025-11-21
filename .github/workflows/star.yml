@@ -2,7 +2,7 @@ name: Random Auto Star Bot
 
 on:
   schedule:
-    - cron: "0 5 * * *"   # Roz subah 5am UTC (10:30am IST)
+    - cron: "0 5 * * *"
   workflow_dispatch:
 
 jobs:
@@ -10,28 +10,33 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
       - name: Fetch trending repos
         id: fetch
         run: |
           curl -s https://ghapi.huchen.dev/repositories > trending.json
-          echo "TRENDING=$(cat trending.json)" >> $GITHUB_ENV
+          count=$(jq length trending.json)
+          echo "COUNT=$count" >> $GITHUB_ENV
 
       - name: Star 10 random repos
         run: |
-          repos=($(echo "$TRENDING" | jq -r '.[].repo'))
-          total=${#repos[@]}
-          
-          echo "Total trending repos: $total"
-          
+          if [ "$COUNT" -eq "0" ]; then
+            echo "Trending API returned nothing"
+            exit 0
+          fi
+
           for i in {1..10}; do
-            r=$((RANDOM % total))
-            repo=${repos[$r]}
+            r=$((RANDOM % COUNT))
+            repo=$(jq -r ".[$r].repo" trending.json)
+
             echo "Starring: $repo"
 
             curl -X PUT \
               -H "Accept: application/vnd.github+json" \
-              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
               https://api.github.com/user/starred/$repo
 
-            sleep $(( (RANDOM % 20) + 5 ))   # 5–25 sec random delay
+            sleep $(( (RANDOM % 20) + 5 ))
           done
