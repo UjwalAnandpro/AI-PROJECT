@@ -10,27 +10,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Install jq
-        run: sudo apt-get install -y jq
-
-      - name: Fetch trending repos
-        id: fetch
+      - name: Install tools
         run: |
-          curl -s https://ghapi.huchen.dev/repositories > trending.json
-          count=$(jq length trending.json)
+          sudo apt-get update
+          sudo apt-get install -y jq htmlq
+
+      - name: Download trending HTML
+        run: |
+          curl -s https://github.com/trending > trending.html
+
+      - name: Parse trending repos
+        id: parse
+        run: |
+          repos=$(htmlq 'article h2 a' -a href < trending.html | sed 's|^/||')
+          echo "$repos" > repos.txt
+          count=$(wc -l < repos.txt)
           echo "COUNT=$count" >> $GITHUB_ENV
 
-      - name: Star 10 random repos
+      - name: Star random repos
         run: |
           if [ "$COUNT" -eq "0" ]; then
-            echo "Trending API returned nothing"
+            echo "No repos found."
             exit 0
           fi
 
           for i in {1..10}; do
-            r=$((RANDOM % COUNT))
-            repo=$(jq -r ".[$r].repo" trending.json)
-
+            repo=$(shuf -n 1 repos.txt)
             echo "Starring: $repo"
 
             curl -X PUT \
@@ -38,5 +43,5 @@ jobs:
               -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
               https://api.github.com/user/starred/$repo
 
-            sleep $(( (RANDOM % 20) + 5 ))
+            sleep $(( (RANDOM % 10) + 2 ))
           done
